@@ -24,18 +24,19 @@ The Sequential Matrix Multiplication project focuses on the fundamental operatio
     ```bash
     git clone [repository-url]
     ```
-
-2. **Compile the Source Code**: Navigate to the project directory and compile the source code using GCC.
-
-    ```bash
-    gcc matrix_multiplication_sequential.c -o matrix_multiplication_sequential.bin
-    ```
-
-3. **Mark Scripts as Executable**: Ensure the shell script is executable.
+2. **Mark Scripts as Executable**: Ensure the shell script is executable.
 
     ```bash
     chmod +x run_tests.sh
+    chmod +x run_compile.sh
     ```
+
+3. **Compile the Source Code**: Navigate to the project directory and compile the source code using GCC.
+
+    ```bash
+    ./run_compile.sh
+    ```
+
 
 ## Detailed Usage Guide
 
@@ -44,4 +45,14 @@ The Sequential Matrix Multiplication project focuses on the fundamental operatio
 To run the matrix multiplication program for a specific matrix size:
 
 ```bash
-./matrix_multiplication_sequential.bin [N]
+./matrix_multiplication_sequential.bin <N> [-v]
+
+
+
+### Running a Single Test
+
+To run the matrix multiplication program for performance test:
+
+```bash
+./run_tests.sh
+
