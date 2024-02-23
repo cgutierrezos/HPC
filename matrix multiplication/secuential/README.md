@@ -46,7 +46,7 @@ To run the matrix multiplication program for a specific matrix size:
 
 ```bash
 ./matrix_multiplication_sequential.bin <N> [-v]
-
+```
 
 
 ### Running a Single Test
@@ -55,4 +55,5 @@ To run the matrix multiplication program for performance test:
 
 ```bash
 ./run_tests.sh
+```
 

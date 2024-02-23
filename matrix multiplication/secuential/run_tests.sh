@@ -16,14 +16,14 @@ N=200
 LOOPS=0
 
 # Scaling factor for N in each iteration
-FACTOR=2
+FACTOR=1000
 
 # Execute the program for different values of N and collect the results
 while [ $LOOPS -lt 10 ]
 do
     echo "Running for N = $N"
     $EXECUTABLE $N >> $OUTPUT_FILE
-    N=$((N * FACTOR))
+    N=$((N + FACTOR))
     LOOPS=$((LOOPS + 1))
 done
 
