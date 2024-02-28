@@ -136,72 +136,54 @@ int main(int argc, char *argv[]) {
 
         if (pid == 0) { // Child process
             close(fd[i][READ_END]); // Close unused read end
-            int sum = 0;
 
             clock_t child_start, child_end;
             child_start = clock(); // Start the stopwatch
 
             // Perform multiplication for the row
             for (int j = 0; j < N; j++) {
+                int sum = 0;
                 for (int k = 0; k < N; k++) {
                     sum += A[i][k] * B[k][j];
                 }
-                // Write the result to pipe
-                if (write(fd[i][WRITE_END], &sum, sizeof(int)) == -1) {
-                    perror("write");
-                    exit(EXIT_FAILURE);
-                }
-                sum = 0;
+                write(fd[i][WRITE_END], &sum, sizeof(int)); // Write the sum to the pipe
             }
-
-            close(fd[i][WRITE_END]); // Close write end after writing
 
             child_end = clock(); // Stop the stopwatch
+            close(fd[i][WRITE_END]); // Close the write end after use
+
             double child_cpu_time_used = ((double)(child_end - child_start)) / CLOCKS_PER_SEC;
-            printf("Child %d CPU time: %f\n", i, child_cpu_time_used);
-
-            // Write child's CPU time to pipe
-            if (write(fd[i][WRITE_END], &child_cpu_time_used, sizeof(double)) == -1) {
-                perror("write");
-                exit(EXIT_FAILURE);
-            }
-
+            write(fd[i][WRITE_END], &child_cpu_time_used, sizeof(double)); // Write child's CPU time to the pipe
             exit(EXIT_SUCCESS);
         }
     }
 
     // Parent process
     for (int i = 0; i < N; i++) {
-        close(fd[i][WRITE_END]); // Close write end in parent
+        close(fd[i][WRITE_END]); // Close unused write ends
     }
 
-    // Wait for all child processes to finish
+    // Read from pipes and update C matrix
     for (int i = 0; i < N; i++) {
-        wait(NULL);
+        int sum;
+        while (read(fd[i][READ_END], &sum, sizeof(int)) > 0) {
+            C[i][sum % N] = sum;
+        }
     }
 
-    // Reading results from child processes and updating C matrix
-    int sum;
+    // Read child CPU times from pipes
     for (int i = 0; i < N; i++) {
-        close(fd[i][WRITE_END]); // Close write end after reading
-
-        // Read child's CPU time from pipe
-        if (read(fd[i][READ_END], &child_times[i], sizeof(double)) == -1) {
-            perror("read");
-            exit(EXIT_FAILURE);
-        }
-
-        while (read(fd[i][READ_END], &sum, sizeof(int)) != -1) {
-            C[i][i] = sum;
-        }
-
-        close(fd[i][READ_END]); // Close read end after reading
+        double child_cpu_time_used;
+        read(fd[i][READ_END], &child_cpu_time_used, sizeof(double)); // Read child's CPU time from the pipe
+        child_times[i] = child_cpu_time_used;
     }
 
-    end = clock(); // Stops the stopwatch
+    // Close all pipe file descriptors
+    for (int i = 0; i < N; i++) {
+        close(fd[i][READ_END]);
+    }
 
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-
+    // Determine which child process took the most time
     double max_child_time = 0;
     for (int i = 0; i < N; i++) {
         if (child_times[i] > max_child_time) {
@@ -209,19 +191,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    double total_time = cpu_time_used + max_child_time;
+    end = clock(); // Stop the stopwatch
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate total CPU time for parent
 
-    if (verbose) {
-        printMatrices(A, B, C, N);
-        // Printing results
-        printf("Time Clock to process: %f\n", cpu_time_used);
-        printf("Max Child Time: %f\n", max_child_time);
-        printf("Total Time: %f\n", total_time);
-    } else {
-        printf("%d, %f\n", N, total_time);
-    }
+    // Print the result
+    printf("N = %d, Total CPU Time = %f\n", N, cpu_time_used + max_child_time);
 
-    // Freeing memory
+    // Deallocate memory
     freeMatrices(A, B, C, N);
 
     return 0;
