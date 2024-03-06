@@ -1,19 +1,26 @@
 #!/bin/bash
 
 # Name of the executable
-EXECUTABLE="./matrix_multiplication_process_sharedmemory.bin"
+EXECUTABLE="./matrix_multiplication_sequential"
 
 # Output file for CSV results
-OUTPUT_FILE="sequential_results.csv"
+OUTPUT_FILE="sequential_resultsO.csv"
 
 # Initialize the results file and write the header
 echo "N, CPU_Time" > $OUTPUT_FILE
 
 # Execute the program for different values of N and collect the results
-for N in 200 500 1000 2000 3000 4000 5000 6000 7000 8000
+
+for i in {1..3}
 do
-    echo "Running for N = $N"
-    $EXECUTABLE $N >> $OUTPUT_FILE
+    echo "with -o$i" >> $OUTPUT_FILE
+    for N in 500 1000
+    do
+        echo "Running for N = $N"
+        $EXECUTABLE$i".bin" $N >> $OUTPUT_FILE
+    done
 done
+
+
 
 echo "Execution completed. Results saved in $OUTPUT_FILE"
