@@ -8,15 +8,6 @@
 #define READ_END 0
 #define WRITE_END 1
 
-void printMatrix(int **matrix, int N) {
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            printf("%d\t", matrix[i][j]);
-        }
-        printf("\n");
-    }
-}
-
 void allocateMatrices(int ***A, int ***B, int ***C, int N) {
     *A = (int **)malloc(N * sizeof(int *));
     *B = (int **)malloc(N * sizeof(int *));
@@ -41,16 +32,6 @@ void fillMatrices(int **A, int **B, int **C, int N) {
     }
 }
 
-void MultiplyMatrices(int **A, int **B, int **C, int N) {
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            for (int k = 0; k < N; k++) {
-                C[i][j] += A[i][k] * B[k][j];
-            }
-        }
-    }
-}
-
 void freeMatrices(int **A, int **B, int **C, int N) {
     for (int i = 0; i < N; i++) {
         free(A[i]);
@@ -63,44 +44,32 @@ void freeMatrices(int **A, int **B, int **C, int N) {
     free(C);
 }
 
-void printMatrices(int **A, int **B, int **C, int N) {
-    printf("A MATRIX:\n");
-    printMatrix(A, N);
-
-    printf("\n\n");
-
-    printf("B MATRIX:\n");
-    printMatrix(B, N);
-
-    printf("\n\n");
-
-    printf("C MATRIX:\n");
-    printMatrix(C, N);
-
-    printf("\n\n");
-}
-
-void getCommands(int argc, char *argv[], int *N, int *verbose) {
-    // Parse command-line arguments
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
-            *verbose = 1; // Enable verbose output
-        } else if (i == 1) {
-            *N = atoi(argv[i]); // First positional argument is matrix size
+void multiplyMatrices(int **A, int **B, int **C, int start_row, int end_row, int N) {
+    for (int i = start_row; i < end_row; i++) {
+        for (int j = 0; j < N; j++) {
+            for (int k = 0; k < N; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
         }
-    }
-
-    if (*N == 0) {
-        printf("Usage: %s <N> [-v|--verbose]\n", argv[0]);
-        exit(1);
     }
 }
 
 int main(int argc, char *argv[]) {
-    int N = 0, verbose = 0;
+    int N = 0, num_processes = 1;
 
-    //Process command line arguments
-    getCommands(argc, argv, &N, &verbose);
+    // Parse command line arguments
+    if (argc != 3) {
+        printf("Usage: %s <N> <num_processes>\n", argv[0]);
+        exit(1);
+    }
+
+    N = atoi(argv[1]);
+    num_processes = atoi(argv[2]);
+
+    if (N <= 0 || num_processes <= 0) {
+        printf("Invalid arguments\n");
+        exit(1);
+    }
 
     // Memory allocation
     int **A, **B, **C;
@@ -110,15 +79,13 @@ int main(int argc, char *argv[]) {
     fillMatrices(A, B, C, N);
 
     clock_t start, end;
-    double cpu_time_used = 0;
+    double cpu_time_used = 0, max_child_time = 0;
 
     start = clock(); // Starts the stopwatch
 
-    int fd[N][2]; // Array of pipes for communication with child processes
-    double child_times[N];
-
     // Creating pipes
-    for (int i = 0; i < N; i++) {
+    int fd[num_processes][2];
+    for (int i = 0; i < num_processes; i++) {
         if (pipe(fd[i]) == -1) {
             perror("pipe");
             exit(EXIT_FAILURE);
@@ -126,7 +93,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Forking child processes
-    for (int i = 0; i < N; i++) {
+    int rows_per_process = N / num_processes;
+    for (int i = 0; i < num_processes; i++) {
         pid_t pid = fork();
 
         if (pid == -1) {
@@ -137,65 +105,61 @@ int main(int argc, char *argv[]) {
         if (pid == 0) { // Child process
             close(fd[i][READ_END]); // Close unused read end
 
-            clock_t child_start, child_end;
-            child_start = clock(); // Start the stopwatch
-
-            // Perform multiplication for the row
-            for (int j = 0; j < N; j++) {
-                int sum = 0;
-                for (int k = 0; k < N; k++) {
-                    sum += A[i][k] * B[k][j];
-                }
-                write(fd[i][WRITE_END], &sum, sizeof(int)); // Write the sum to the pipe
+            int start_row = i * rows_per_process;
+            int end_row = (i + 1) * rows_per_process;
+            if (i == num_processes - 1) {
+                end_row = N; // Last process handles remaining rows
             }
 
-            child_end = clock(); // Stop the stopwatch
-            close(fd[i][WRITE_END]); // Close the write end after use
+            clock_t child_start = clock(); // Start child's stopwatch
 
-            double child_cpu_time_used = ((double)(child_end - child_start)) / CLOCKS_PER_SEC;
-            write(fd[i][WRITE_END], &child_cpu_time_used, sizeof(double)); // Write child's CPU time to the pipe
+            // Perform multiplication for the assigned rows
+            multiplyMatrices(A, B, C, start_row, end_row, N);
+
+            clock_t child_end = clock(); // Stop child's stopwatch
+            double child_time = ((double)(child_end - child_start)) / CLOCKS_PER_SEC;
+
+            // Write the result back to the parent
+            write(fd[i][WRITE_END], &start_row, sizeof(int));
+            write(fd[i][WRITE_END], &end_row, sizeof(int));
+            write(fd[i][WRITE_END], &child_time, sizeof(double));
+            for (int j = start_row; j < end_row; j++) {
+                write(fd[i][WRITE_END], C[j], N * sizeof(int));
+            }
+
+            close(fd[i][WRITE_END]);
             exit(EXIT_SUCCESS);
         }
     }
 
     // Parent process
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < num_processes; i++) {
         close(fd[i][WRITE_END]); // Close unused write ends
     }
 
-    // Read from pipes and update C matrix
-    for (int i = 0; i < N; i++) {
-        int sum;
-        while (read(fd[i][READ_END], &sum, sizeof(int)) > 0) {
-            C[i][sum % N] = sum;
+    // Read results from child processes and construct the final matrix
+    for (int i = 0; i < num_processes; i++) {
+        int start_row, end_row;
+        double child_time;
+        read(fd[i][READ_END], &start_row, sizeof(int));
+        read(fd[i][READ_END], &end_row, sizeof(int));
+        read(fd[i][READ_END], &child_time, sizeof(double));
+        if (child_time > max_child_time) {
+            max_child_time = child_time;
         }
-    }
-
-    // Read child CPU times from pipes
-    for (int i = 0; i < N; i++) {
-        double child_cpu_time_used;
-        read(fd[i][READ_END], &child_cpu_time_used, sizeof(double)); // Read child's CPU time from the pipe
-        child_times[i] = child_cpu_time_used;
-    }
-
-    // Close all pipe file descriptors
-    for (int i = 0; i < N; i++) {
+        for (int j = start_row; j < end_row; j++) {
+            read(fd[i][READ_END], C[j], N * sizeof(int));
+        }
         close(fd[i][READ_END]);
     }
 
-    // Determine which child process took the most time
-    double max_child_time = 0;
-    for (int i = 0; i < N; i++) {
-        if (child_times[i] > max_child_time) {
-            max_child_time = child_times[i];
-        }
-    }
-
     end = clock(); // Stop the stopwatch
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate total CPU time for parent
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate total CPU time
 
-    // Print the result
-    printf("N = %d, Total CPU Time = %f\n", N, cpu_time_used + max_child_time);
+    // Add maximum child time to total CPU time
+    cpu_time_used += max_child_time;
+
+    printf("N = %d, Total CPU Time = %f\n", N, cpu_time_used);
 
     // Deallocate memory
     freeMatrices(A, B, C, N);
