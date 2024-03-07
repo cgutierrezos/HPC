@@ -159,7 +159,8 @@ int main(int argc, char *argv[]) {
     // Add maximum child time to total CPU time
     cpu_time_used += max_child_time;
 
-    printf("N = %d, Total CPU Time = %f\n", N, cpu_time_used);
+    // printf("N = %d, Total CPU Time = %f\n", N, cpu_time_used);
+    printf("%d, %d, %f\n", num_processes, N, cpu_time_used);
 
     // Deallocate memory
     freeMatrices(A, B, C, N);

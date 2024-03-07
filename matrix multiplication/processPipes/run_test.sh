@@ -29,12 +29,14 @@ OUTPUT_FILE="processpipes_results.csv"
 #    LOOPS=$((LOOPS + 1))
 #done
 
-for NUM_PROCESSES in 8 4 2
+echo "Processes, N, CPU_Time" > $OUTPUT_FILE
+
+for NUM_PROCESSES in 16 12 8 4 2
 do
  for N in 200 500 1000 2000 3000 4000 5000 6000 7000 8000
  do
     
-     echo "Running for N = $N with $NUM_PROCESSES parallel processes" >> $OUTPUT_FILE
+     echo "Running for N = $N with $NUM_PROCESSES parallel processes"
 
     # Run the executable with the specified number of processes and wait for it to finish
     
