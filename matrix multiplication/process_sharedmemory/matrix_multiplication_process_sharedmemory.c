@@ -8,7 +8,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define MAX_PROCESSES 8
+#define MAX_PROCESSES 0
 
 void printMatrix(int **matrix, int N) {
     
@@ -68,7 +68,7 @@ void fillMatrices(int **A, int **B, int **C, int N){
 
 }
 
-void MultiplyMatrices(int **A, int **B, int **C, int N, double *totalMaxExecutionTime) {
+void MultiplyMatrices(int **A, int **B, int **C, int N, double *totalMaxExecutionTime, int *numberOfProccess) {
     int shmid = shmget(IPC_PRIVATE, sizeof(int) * N * N, IPC_CREAT | 0666);
     if (shmid == -1) {
         perror("Error en shmget");
@@ -82,13 +82,26 @@ void MultiplyMatrices(int **A, int **B, int **C, int N, double *totalMaxExecutio
     }
 
     // Calcular la cantidad de procesos hijos necesarios
-    int numProcesses = (N < MAX_PROCESSES) ? N : MAX_PROCESSES;
+    int numProcesses = (N < *numberOfProccess) ? N : *numberOfProccess;
 
     // Calcular el tamaño del bloque para cada proceso hijo
     int blockSize = N / numProcesses;
 
-    // Variable para almacenar el tiempo máximo de los últimos 8 hijos
-    double maxTimeInGroup = 0.0;
+    // Crear memoria compartida para totalMaxExecutionTimeTemporal
+    int totalMaxExecutionTimeShmid = shmget(IPC_PRIVATE, sizeof(double), IPC_CREAT | 0666);
+    if (totalMaxExecutionTimeShmid == -1) {
+        perror("Error en shmget para totalMaxExecutionTimeTemporal");
+        exit(1);
+    }
+
+    double *totalMaxExecutionTimeTemporal = (double *)shmat(totalMaxExecutionTimeShmid, NULL, 0);
+    if ((intptr_t)totalMaxExecutionTimeTemporal == -1) {
+        perror("Error en shmat para totalMaxExecutionTimeTemporal");
+        exit(1);
+    }
+
+    // Inicializar totalMaxExecutionTimeTemporal en 0.0
+    *totalMaxExecutionTimeTemporal = 0.0;
 
     // Proceso para la multiplicación de matrices
     for (int i = 0; i < N; i++) {
@@ -116,8 +129,8 @@ void MultiplyMatrices(int **A, int **B, int **C, int N, double *totalMaxExecutio
             double executionTime = ((double)(end - start)) / CLOCKS_PER_SEC;
 
             // Comparar el tiempo actual con el máximo y actualizar si es necesario
-            if (executionTime > maxTimeInGroup) {
-                maxTimeInGroup = executionTime;
+            if (executionTime > *totalMaxExecutionTimeTemporal) {
+                *totalMaxExecutionTimeTemporal = executionTime;
             }
 
             exit(0);
@@ -127,17 +140,17 @@ void MultiplyMatrices(int **A, int **B, int **C, int N, double *totalMaxExecutio
         }
 
         // Verificar si se deben recolectar tiempos máximos
-        if ((i + 1) % MAX_PROCESSES == 0 || i == numProcesses - 1) {
+        if ((i + 1) % *numberOfProccess == 0 || i == numProcesses - 1) {
             // Esperar a que todos los procesos hijos del grupo actual terminen
-            for (int j = 0; j < MAX_PROCESSES && (i - j) >= 0; j++) {
+            for (int j = 0; j < *numberOfProccess && (i - j) >= 0; j++) {
                 wait(NULL);
             }
 
-            // Sumar el tiempo máximo del grupo actual al total
-            *totalMaxExecutionTime += maxTimeInGroup;
+             // Sumar el tiempo máximo de totalMaxExecutionTimeTemporal al total
+             *totalMaxExecutionTime += *totalMaxExecutionTimeTemporal;
 
             // Reiniciar la variable para el próximo grupo
-            maxTimeInGroup = 0.0;
+            *totalMaxExecutionTimeTemporal = 0.0;
         }
     }
 
@@ -165,7 +178,7 @@ void freeMatrices(int **A, int **B, int **C, int N){
 }
 
 
-void getCommands(int argc, char *argv[], int *N, int *verbose){
+void getCommands(int argc, char *argv[], int *N, int *verbose, int *numberOfProccess){
 
     // Parse command-line arguments
     for (int i = 1; i < argc; i++) {
@@ -173,7 +186,9 @@ void getCommands(int argc, char *argv[], int *N, int *verbose){
             *verbose = 1; // Enable verbose output
         } else if (i == 1) {
             *N = atoi(argv[i]); // First positional argument is matrix size
-        } 
+        } else if (i == 2) {
+            *numberOfProccess = atoi(argv[i]); // First positional argument is matrix size
+        }
     }
 
     if (*N == 0) {
@@ -181,16 +196,20 @@ void getCommands(int argc, char *argv[], int *N, int *verbose){
         exit(1);
     }
 
+    if (*numberOfProccess == 0) {
+        printf("Usage: %s <N> <numberOfProccess> [-v|--verbose]\n", argv[0]);
+        exit(1);
+    }
 
 }
 
 
 int main(int argc, char *argv[]) {
 
-    int N = 0, verbose = 0;
+    int N = 0, verbose = 0, numberOfProccess= 0;
 
     // Process command line arguments
-    getCommands(argc, argv, &N, &verbose);
+    getCommands(argc, argv, &N, &verbose, &numberOfProccess);
 
     // Memory allocation
     int **A, **B, **C;
@@ -201,16 +220,18 @@ int main(int argc, char *argv[]) {
 
     // Variables para medir el tiempo total y el tiempo máximo de ejecución
     clock_t startTotal, endTotal;
-    double totalCpuTimeUsed, totalMaxExecutionTime = 0.0;
+    double totalCpuTimeUsed, totalMaxExecutionTime = 0.0, totalMainThread = 0.0;
 
     startTotal = clock(); // Inicia el cronómetro total
 
     // Llamada a MultiplyMatrices con la referencia a totalMaxExecutionTime
-    MultiplyMatrices(A, B, C, N, &totalMaxExecutionTime);
+    MultiplyMatrices(A, B, C, N, &totalMaxExecutionTime, &numberOfProccess);
 
     endTotal = clock(); // Detiene el cronómetro total
 
-    totalCpuTimeUsed = ((double) (endTotal - startTotal)) / CLOCKS_PER_SEC;
+    totalMainThread = ((double) (endTotal - startTotal)) / CLOCKS_PER_SEC;
+
+    totalCpuTimeUsed = totalMaxExecutionTime + totalMainThread;
 
     if (verbose) {
         printMatrices(A, B, C, N);
@@ -219,7 +240,8 @@ int main(int argc, char *argv[]) {
         printf("Total CPU Time: %f\n", totalCpuTimeUsed);
         printf("Total Max Execution Time: %f\n", totalMaxExecutionTime);
     } else {
-        printf("%d, %f, %f\n", N, totalCpuTimeUsed, totalMaxExecutionTime);
+        //printf("%d, %f, %f, %f\n", N, totalMainThread, totalMaxExecutionTime, totalCpuTimeUsed);
+        printf("%d, %d, %f\n", numberOfProccess, N, totalCpuTimeUsed);
     }
 
     // Liberar memoria
