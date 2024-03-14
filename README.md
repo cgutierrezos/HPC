@@ -31,7 +31,7 @@ The project is organized into three main directories, each focusing on a distinc
 1. Clone the repository to your local machine:
 
     ```bash
-    git clone [repository-url]
+    git clone [git@github.com:cgutierrezos/HPC.git]
     ```
 
 2. Navigate to the desired directory (sequential, shared memory, or pipes) and follow the specific installation and usage instructions provided in the README.md file within that directory.
