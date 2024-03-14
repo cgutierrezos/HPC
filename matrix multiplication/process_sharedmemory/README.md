@@ -1,58 +1,48 @@
-# Sequential Matrix Multiplication
+# Parallel Matrix Multiplication with Shared Memory
 
 ## Introduction
 
-The Sequential Matrix Multiplication project focuses on the fundamental operation of matrix multiplication, a cornerstone in numerical analysis, computer graphics, optimization, and more. This project implements a basic yet efficient algorithm for multiplying two NxN matrices in a sequential manner, without parallelization, to understand the performance implications of matrix operations at scale.
+The Parallel Matrix Multiplication with Shared Memory segment of this project delves into the advanced computational technique of utilizing shared memory for parallel processing in matrix multiplication. This approach leverages the concurrent execution capabilities of modern multi-core processors to enhance the efficiency of matrix operations, particularly for large-scale computations.
 
 ## Features
 
-- **Scalability Testing**: Executes matrix multiplication across a range of matrix sizes, starting from N=200 and doubling up to 10 iterations, to evaluate performance at various scales.
-- **Performance Metrics**: Records CPU time for each operation, offering insights into computational complexity and resource utilization.
-- **Ease of Use**: Simple command-line interface for executing tests and generating performance data.
-- **Customizability**: Offers the flexibility to adjust the starting matrix size, the number of iterations, and the scaling factor.
+- **Parallel Execution**: Implements matrix multiplication using multiple processes that share memory space, enabling concurrent computations.
+- **Scalability Analysis**: Tests the algorithm with various matrix sizes and numbers of processes to assess scalability and performance in parallel environments.
+- **Performance Insights**: Measures and compares the execution time of parallel processing against the sequential approach, highlighting the speedup achieved.
+- **Customization Options**: Users can specify the number of processes to be used in addition to adjusting matrix sizes and iterations, allowing for a tailored testing experience.
 
 ## System Requirements
 
-- **Operating System**: Linux/Unix environment.
-- **Compiler**: GCC or any standard C compiler.
-- **Shell**: Bash shell for running the automation script.
+- **Operating System**: Linux/Unix environment, suitable for handling shared memory operations and process management.
+- **Compiler**: GCC or an equivalent C compiler capable of compiling multi-process code.
+- **Shell**: Bash shell or a compatible command-line interface for script execution.
 
 ## Installation Instructions
 
-1. **Clone the Repository**: Clone or download the project repository to your local machine.
+1. **Obtain the Repository**: Start by cloning this repository to your system.
 
     ```bash
-    git clone [repository-url]
+    git clone [git@github.com:cgutierrezos/HPC.git]
     ```
-2. **Mark Scripts as Executable**: Ensure the shell script is executable.
+
+2. **Script Execution Permission**: Make sure that the execution scripts are set to be executable.
 
     ```bash
     chmod +x run_tests.sh
     chmod +x run_compile.sh
     ```
 
-3. **Compile the Source Code**: Navigate to the project directory and compile the source code using GCC.
+3. **Source Code Compilation**: In the project's root directory, use the provided script to compile the parallel matrix multiplication code.
 
     ```bash
     ./run_compile.sh
     ```
 
+## Usage Instructions
 
-## Detailed Usage Guide
+### Executing Parallel Tests
 
-### Running a Single Test
-
-To run the matrix multiplication program for a specific matrix size:
-
-```bash
-./matrix_multiplication_process_sharedmemory.bin <N> [-v]
-
-
-
-### Running a Single Test
-
-To run the matrix multiplication program for performance test:
+To perform matrix multiplication using the parallel algorithm with shared memory, specify the desired matrix size and the number of processes:
 
 ```bash
-./run_tests.sh
-
+./matrix_multiplication_process_sharedmemory.bin <N> <Number_of_Processes>

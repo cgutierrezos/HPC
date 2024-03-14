@@ -9,7 +9,7 @@ OUTPUT_FILE="sequential_results.csv"
 # Initialize the results file and write the header
 echo "Processes, N, CPU_Time" > $OUTPUT_FILE
 
-for num_processes in 16 12 8 6 4 2
+for num_processes in 4 2
 do
 
 # Execute the program for different values of N and collect the results
