@@ -45,4 +45,4 @@ The Parallel Matrix Multiplication with Shared Memory segment of this project de
 To perform matrix multiplication using the parallel algorithm with shared memory, specify the desired matrix size and the number of processes:
 
 ```bash
-./matrix_multiplication_process_sharedmemory.bin <N> <Number_of_Processes>
+./process_sharedmemory.bin <N> <Number_of_Processes>

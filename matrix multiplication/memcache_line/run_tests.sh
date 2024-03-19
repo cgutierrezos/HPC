@@ -1,10 +1,12 @@
 #!/bin/bash
 
+NAME="sequential_memcache_line"
+
 # Name of the executable
-EXECUTABLE="./sequential.bin"
+EXECUTABLE="./$NAME.bin"
 
 # Output file for CSV results
-OUTPUT_FILE="sequential_results.csv"
+OUTPUT_FILE=$NAME"_results.csv"
 
 # Initialize the results file and write the header
 echo "N, CPU_Time" > $OUTPUT_FILE

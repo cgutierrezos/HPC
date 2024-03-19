@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Name of the executable
-EXECUTABLE="./matrix_multiplication_process_pipes.bin"
+EXECUTABLE="./process_pipes.bin"
 
 # Output file for CSV results
 OUTPUT_FILE="processpipes_results.csv"

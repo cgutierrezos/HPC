@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Name of the executable
-EXECUTABLE="./matrix_multiplication_process_sharedmemory.bin"
+EXECUTABLE="./process_sharedmemory.bin"
 
 # Output file for CSV results
-OUTPUT_FILE="sequential_results.csv"
+OUTPUT_FILE="process_sharedmemory_results.csv"
 
 # Initialize the results file and write the header
 echo "Processes, N, CPU_Time" > $OUTPUT_FILE

@@ -45,7 +45,7 @@ The Sequential Matrix Multiplication project focuses on the fundamental operatio
 To run the matrix multiplication program for a specific matrix size:
 
 ```bash
-./sequential.bin <N> [-v]
+./sequential_memcache_line.bin <N> [-v]
 
 
 

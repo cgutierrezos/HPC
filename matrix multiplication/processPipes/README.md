@@ -44,4 +44,4 @@ This segment of the Matrix Multiplication Project delves into the parallel proce
 Execute the parallel matrix multiplication program with a specified matrix size and number of processes:
 
 ```bash
-./matrix_multiplication_process_pipes.bin <N> <num_processes> [-v]
+./process_pipes.bin <N> <num_processes> [-v]
