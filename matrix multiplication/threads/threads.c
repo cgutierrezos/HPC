@@ -3,6 +3,7 @@
 #include <time.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 void allocateMatrices(int ***A, int ***B, int ***C, int N) {
     *A = (int **)malloc(N * sizeof(int *));
@@ -85,10 +86,13 @@ int main(int argc, char *argv[]) {
     // Filling matrices
     fillMatrices(A, B, C, N);
 
-    clock_t start, end;
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+
+    //clock_t start, end;
     double cpu_time_used;
 
-    start = clock(); // Start the stopwatch
+    //start = clock(); // Start the stopwatch
 
     // Creating thread data and threads
     pthread_t threads[num_threads];
@@ -112,10 +116,14 @@ int main(int argc, char *argv[]) {
         pthread_join(threads[i], NULL);
     }
 
-    end = clock(); // Stop the stopwatch
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate total CPU time
+    //end = clock(); // Stop the stopwatch
+    //cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate total CPU time
 
-    printf("N = %d, Total CPU Time = %f\n", N, cpu_time_used);
+    gettimeofday(&end, NULL);
+
+    double time_spent = ((end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_usec - start.tv_usec) / 1000.0);
+
+    printf("N = %d, Total CPU Time = %f\n", N, time_spent);
 
     // Deallocate memory
     freeMatrices(A, B, C, N);
