@@ -3,6 +3,36 @@
 #include <time.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/time.h>
+
+void printMatrix(int **matrix, int N) {
+    
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            printf("%d\t", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+void printMatrices(int **A, int **B, int **C, int N){
+
+    printf("A MATRIX:\n");
+    printMatrix(A, N);
+
+    printf("\n\n");
+
+    printf("B MATRIX:\n");
+    printMatrix(B, N);
+
+    printf("\n\n");
+
+    printf("C MATRIX:\n");
+    printMatrix(C, N);
+
+    printf("\n\n");
+}
+
 
 void allocateMatrices(int ***A, int ***B, int ***C, int N) {
     *A = (int **)malloc(N * sizeof(int *));
@@ -61,23 +91,39 @@ void *multiplyMatrices(void *arg) {
     pthread_exit(NULL);
 }
 
+void getCommands(int argc, char *argv[], int *N, int *num_threads, int *verbose){
+
+    // Parse command-line arguments
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
+            *verbose = 1; // Enable verbose output
+        } else if (i == 1) {
+            *N = atoi(argv[i]); // First positional argument is matrix size
+        } else if (i == 2) {
+            *num_threads = atoi(argv[i]); // First positional argument is matrix size
+        } 
+    }
+
+    if (*N == 0) {
+        printf("Usage: %s <N> <num_threads> [-v|--verbose]\n", argv[0]);
+        exit(1);
+    }
+
+    if (*num_threads == 0) {
+        printf("Usage: %s <N> <num_threads> [-v|--verbose]\n", argv[0]);
+        exit(1);
+    }
+
+
+}
+
 int main(int argc, char *argv[]) {
-    int N = 0, num_threads = 1;
 
-    // Parse command line arguments
-    if (argc != 3) {
-        printf("Usage: %s <N> <num_threads>\n", argv[0]);
-        exit(1);
-    }
-
-    N = atoi(argv[1]);
-    num_threads = atoi(argv[2]);
-
-    if (N <= 0 || num_threads <= 0) {
-        printf("Invalid arguments\n");
-        exit(1);
-    }
-
+    int N = 0, verbose = 0, num_threads = 0;
+    
+    //Process command line arguments
+    getCommands(argc, argv, &N, &num_threads, &verbose);
+    
     // Memory allocation
     int **A, **B, **C;
     allocateMatrices(&A, &B, &C, N);
@@ -85,10 +131,13 @@ int main(int argc, char *argv[]) {
     // Filling matrices
     fillMatrices(A, B, C, N);
 
-    clock_t start, end;
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+
+    //clock_t start, end;
     double cpu_time_used;
 
-    start = clock(); // Start the stopwatch
+    //start = clock(); // Start the stopwatch
 
     // Creating thread data and threads
     pthread_t threads[num_threads];
@@ -112,10 +161,22 @@ int main(int argc, char *argv[]) {
         pthread_join(threads[i], NULL);
     }
 
-    end = clock(); // Stop the stopwatch
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate total CPU time
+    //end = clock(); // Stop the stopwatch
+    //cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate total CPU time
 
-    printf("%d, %d, %f\n", num_threads, N, cpu_time_used);
+    gettimeofday(&end, NULL);
+
+    double time_spent = ((end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_usec - start.tv_usec) / 1000.0);
+
+    if(verbose){
+        printMatrices(A, B, C, N);
+        // Printing results
+
+        printf("Time Clock to process: %f", time_spent);
+    }else{
+
+        printf("%d, %d, %f\n", num_threads, N, time_spent);
+    }
 
     // Deallocate memory
     freeMatrices(A, B, C, N);
