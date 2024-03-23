@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     end = clock(); // Stop the stopwatch
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate total CPU time
 
-    printf("N = %d, Total CPU Time = %f\n", N, cpu_time_used);
+    printf("%d, %d, %f\n", num_threads, N, cpu_time_used);
 
     // Deallocate memory
     freeMatrices(A, B, C, N);
