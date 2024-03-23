@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
 
     gettimeofday(&end, NULL);
 
-    double time_spent = ((end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_usec - start.tv_usec) / 1000.0);
+    double time_spent = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
 
     if(verbose){
         printMatrices(A, B, C, N);
