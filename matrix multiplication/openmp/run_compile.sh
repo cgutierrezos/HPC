@@ -1,0 +1,1 @@
+gcc -o matrixopenmp.bin matrixopenmp.c -fopenmp
