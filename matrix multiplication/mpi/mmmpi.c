@@ -125,8 +125,12 @@ int main(int argc, char *argv[]) {
     MPI_Bcast(B, N * N, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(A, sendcounts, displs, MPI_INT, sub_A, sendcounts[rank], MPI_INT, 0, MPI_COMM_WORLD);
 
+    MPI_Barrier(MPI_COMM_WORLD);  // Ensures all processes start together
     double startTotal = MPI_Wtime();
+
     MultiplyMatrices(sub_A, B, sub_C, N, sendcounts[rank] / N);
+
+    MPI_Barrier(MPI_COMM_WORLD);  // Ensures all processes finish together
     double endTotal = MPI_Wtime();
 
     MPI_Gatherv(sub_C, sendcounts[rank], MPI_INT, C, sendcounts, displs, MPI_INT, 0, MPI_COMM_WORLD);
@@ -134,9 +138,8 @@ int main(int argc, char *argv[]) {
     if (rank == 0) {
         if (verbose) {
             printMatrices(A, B, C, N);
-        } else {
-            printf("Number of Processes: %d, Matrix Size: %d, Time Taken: %f seconds\n", size, N, endTotal - startTotal);
         }
+        printf("Number of Processes: %d, Matrix Size: %d, Time Taken: %f seconds\n", size, N, endTotal - startTotal);
         freeMatrices(A, B, C);
     }
 
