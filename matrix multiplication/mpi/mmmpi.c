@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
         if (verbose) {
             printMatrices(A, B, C, N);
         } else {
-            printf("%d, %d, %f \n", size, N, endTotal - startTotal);
+            printf("Number of Processes: %d, Matrix Size: %d, Time Taken: %f seconds\n", size, N, endTotal - startTotal);
         }
         freeMatrices(A, B, C);
     }
